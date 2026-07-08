@@ -3,6 +3,12 @@ const startInput = document.getElementById('startDate');
 const endInput = document.getElementById('endDate');
 const getImagesButton = document.getElementById('getImagesButton');
 const gallery = document.getElementById('gallery');
+const modal = document.getElementById('imageModal');
+const modalImage = document.getElementById('modalImage');
+const modalTitle = document.getElementById('modalTitle');
+const modalDate = document.getElementById('modalDate');
+const modalExplanation = document.getElementById('modalExplanation');
+const closeModalButton = document.getElementById('closeModal');
 
 // Call the setupDateInputs function from dateRange.js
 // This sets up the date pickers to:
@@ -76,24 +82,44 @@ function renderGallery(items) {
     const image = document.createElement('img');
     image.src = item.url;
     image.alt = item.title;
+    image.addEventListener('click', () => openModal(item));
 
     const title = document.createElement('h3');
     title.textContent = item.title;
 
     const date = document.createElement('p');
-    date.innerHTML = `<strong>Date:</strong> ${item.date}`;
-
-    const explanation = document.createElement('p');
-    explanation.textContent = item.explanation;
+    date.textContent = item.date;
 
     card.appendChild(image);
     card.appendChild(title);
     card.appendChild(date);
-    card.appendChild(explanation);
 
     gallery.appendChild(card);
   });
 }
+
+function openModal(item) {
+  modalImage.src = item.url;
+  modalImage.alt = item.title;
+  modalTitle.textContent = item.title;
+  modalDate.textContent = item.date;
+  modalExplanation.textContent = item.explanation;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeModal() {
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+closeModalButton.addEventListener('click', closeModal);
+
+modal.addEventListener('click', (event) => {
+  if (event.target === modal) {
+    closeModal();
+  }
+});
 
 function showMessage(message) {
   gallery.innerHTML = `
