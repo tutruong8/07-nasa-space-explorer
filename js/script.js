@@ -31,7 +31,7 @@ getImagesButton.addEventListener('click', () => {
     return;
   }
 
-  showMessage('Loading space images...');
+  showMessage('🔄 Loading space photos. Please wait...');
 
   const apiKey = window.NASA_API_KEY || 'DEMO_KEY';
   const apiUrl = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&start_date=${startDate}&end_date=${endDate}`;
