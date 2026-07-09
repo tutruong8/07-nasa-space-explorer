@@ -59,7 +59,8 @@ getImagesButton.addEventListener('click', () => {
           title: item.title || 'Untitled entry',
           date: item.date || '',
           explanation: item.explanation || 'No explanation available.',
-          mediaType: item.media_type || 'image'
+          mediaType: item.media_type || 'image',
+          thumbnailUrl: item.thumbnail_url || ''
         }));
 
       if (apodItems.length === 0) {
@@ -85,7 +86,13 @@ function renderGallery(items) {
     const media = document.createElement('div');
     media.className = 'gallery-media';
 
-    if (item.mediaType === 'video') {
+    if (item.mediaType === 'video' && item.thumbnailUrl) {
+      const image = document.createElement('img');
+      image.src = item.thumbnailUrl;
+      image.alt = item.title;
+      image.addEventListener('click', () => openModal(item));
+      media.appendChild(image);
+    } else if (item.mediaType === 'video') {
       const videoLabel = document.createElement('div');
       videoLabel.className = 'video-placeholder';
       videoLabel.innerHTML = '<div class="placeholder-icon">🎬</div><p>Video entry</p>';
@@ -124,7 +131,21 @@ function renderGallery(items) {
 function openModal(item) {
   modalMedia.innerHTML = '';
 
-  if (item.mediaType === 'video') {
+  if (item.mediaType === 'video' && item.thumbnailUrl) {
+    const image = document.createElement('img');
+    image.src = item.thumbnailUrl;
+    image.alt = item.title;
+    modalMedia.appendChild(image);
+
+    const videoLink = document.createElement('a');
+    videoLink.href = item.url;
+    videoLink.textContent = 'Open video in a new tab';
+    videoLink.target = '_blank';
+    videoLink.rel = 'noopener noreferrer';
+    videoLink.className = 'video-link';
+
+    modalMedia.appendChild(videoLink);
+  } else if (item.mediaType === 'video') {
     const videoMessage = document.createElement('p');
     videoMessage.textContent = 'This APOD entry is a video.';
 
