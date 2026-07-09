@@ -86,9 +86,11 @@ function renderGallery(items) {
     const media = document.createElement('div');
     media.className = 'gallery-media';
 
-    if (item.mediaType === 'video' && item.thumbnailUrl) {
+    const previewUrl = getPreviewUrl(item);
+
+    if (item.mediaType === 'video' && previewUrl) {
       const image = document.createElement('img');
-      image.src = item.thumbnailUrl;
+      image.src = previewUrl;
       image.alt = item.title;
       image.addEventListener('click', () => openModal(item));
       media.appendChild(image);
@@ -131,9 +133,11 @@ function renderGallery(items) {
 function openModal(item) {
   modalMedia.innerHTML = '';
 
-  if (item.mediaType === 'video' && item.thumbnailUrl) {
+  const previewUrl = getPreviewUrl(item);
+
+  if (item.mediaType === 'video' && previewUrl) {
     const image = document.createElement('img');
-    image.src = item.thumbnailUrl;
+    image.src = previewUrl;
     image.alt = item.title;
     modalMedia.appendChild(image);
 
@@ -184,6 +188,28 @@ modal.addEventListener('click', (event) => {
     closeModal();
   }
 });
+
+function getPreviewUrl(item) {
+  if (item.mediaType === 'video') {
+    if (item.thumbnailUrl) {
+      return item.thumbnailUrl;
+    }
+
+    const videoId = extractYouTubeVideoId(item.url);
+    if (videoId) {
+      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    }
+  }
+
+  return item.url;
+}
+
+function extractYouTubeVideoId(url) {
+  const cleanUrl = url || '';
+  const match = cleanUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+
+  return match ? match[1] : '';
+}
 
 function showRandomFact() {
   const facts = [
