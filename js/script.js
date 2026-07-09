@@ -3,8 +3,9 @@ const startInput = document.getElementById('startDate');
 const endInput = document.getElementById('endDate');
 const getImagesButton = document.getElementById('getImagesButton');
 const gallery = document.getElementById('gallery');
+const factText = document.getElementById('factText');
 const modal = document.getElementById('imageModal');
-const modalImage = document.getElementById('modalImage');
+const modalMedia = document.getElementById('modalMedia');
 const modalTitle = document.getElementById('modalTitle');
 const modalDate = document.getElementById('modalDate');
 const modalExplanation = document.getElementById('modalExplanation');
@@ -15,6 +16,7 @@ const closeModalButton = document.getElementById('closeModal');
 // - Default to a range of 9 days (from 9 days ago to today)
 // - Restrict dates to NASA's image archive (starting from 1995)
 setupDateInputs(startInput, endInput);
+showRandomFact();
 
 // When the user clicks the button, fetch APOD data for the selected date range
 getImagesButton.addEventListener('click', () => {
@@ -54,9 +56,10 @@ getImagesButton.addEventListener('click', () => {
         .filter((item) => item.url)
         .map((item) => ({
           url: item.url,
-          title: item.title || 'Untitled image',
+          title: item.title || 'Untitled entry',
           date: item.date || '',
-          explanation: item.explanation || 'No explanation available.'
+          explanation: item.explanation || 'No explanation available.',
+          mediaType: item.media_type || 'image'
         }));
 
       if (apodItems.length === 0) {
@@ -79,10 +82,30 @@ function renderGallery(items) {
     const card = document.createElement('article');
     card.className = 'gallery-item';
 
-    const image = document.createElement('img');
-    image.src = item.url;
-    image.alt = item.title;
-    image.addEventListener('click', () => openModal(item));
+    const media = document.createElement('div');
+    media.className = 'gallery-media';
+
+    if (item.mediaType === 'video') {
+      const videoLabel = document.createElement('div');
+      videoLabel.className = 'video-placeholder';
+      videoLabel.innerHTML = '<div class="placeholder-icon">🎬</div><p>Video entry</p>';
+
+      const videoLink = document.createElement('a');
+      videoLink.href = item.url;
+      videoLink.textContent = 'Watch video';
+      videoLink.target = '_blank';
+      videoLink.rel = 'noopener noreferrer';
+      videoLink.className = 'video-link';
+
+      media.appendChild(videoLabel);
+      media.appendChild(videoLink);
+    } else {
+      const image = document.createElement('img');
+      image.src = item.url;
+      image.alt = item.title;
+      image.addEventListener('click', () => openModal(item));
+      media.appendChild(image);
+    }
 
     const title = document.createElement('h3');
     title.textContent = item.title;
@@ -90,7 +113,7 @@ function renderGallery(items) {
     const date = document.createElement('p');
     date.textContent = item.date;
 
-    card.appendChild(image);
+    card.appendChild(media);
     card.appendChild(title);
     card.appendChild(date);
 
@@ -99,8 +122,28 @@ function renderGallery(items) {
 }
 
 function openModal(item) {
-  modalImage.src = item.url;
-  modalImage.alt = item.title;
+  modalMedia.innerHTML = '';
+
+  if (item.mediaType === 'video') {
+    const videoMessage = document.createElement('p');
+    videoMessage.textContent = 'This APOD entry is a video.';
+
+    const videoLink = document.createElement('a');
+    videoLink.href = item.url;
+    videoLink.textContent = 'Open video in a new tab';
+    videoLink.target = '_blank';
+    videoLink.rel = 'noopener noreferrer';
+    videoLink.className = 'video-link';
+
+    modalMedia.appendChild(videoMessage);
+    modalMedia.appendChild(videoLink);
+  } else {
+    const image = document.createElement('img');
+    image.src = item.url;
+    image.alt = item.title;
+    modalMedia.appendChild(image);
+  }
+
   modalTitle.textContent = item.title;
   modalDate.textContent = item.date;
   modalExplanation.textContent = item.explanation;
@@ -120,6 +163,19 @@ modal.addEventListener('click', (event) => {
     closeModal();
   }
 });
+
+function showRandomFact() {
+  const facts = [
+    'A day on Venus is longer than a year on Venus.',
+    'Jupiter has a storm so large it could fit Earth inside it.',
+    'Neutron stars can spin hundreds of times per second.',
+    'There are more stars in the universe than grains of sand on Earth.',
+    'The Sun makes up about 99.8% of the mass of our solar system.'
+  ];
+
+  const randomFact = facts[Math.floor(Math.random() * facts.length)];
+  factText.textContent = randomFact;
+}
 
 function showMessage(message) {
   gallery.innerHTML = `
