@@ -36,7 +36,7 @@ getImagesButton.addEventListener('click', () => {
   showMessage('🔄 Loading space photos. Please wait...');
 
   const apiKey = window.NASA_API_KEY || 'DEMO_KEY';
-  const apiUrl = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&start_date=${startDate}&end_date=${endDate}`;
+  const apiUrl = `https://api.nasa.gov/planetary/apod?api_key=${apiKey}&start_date=${startDate}&end_date=${endDate}&thumbs=true`;
 
   fetch(apiUrl)
     .then((response) => {
@@ -86,28 +86,25 @@ function renderGallery(items) {
     const media = document.createElement('div');
     media.className = 'gallery-media';
 
-    const previewUrl = getPreviewUrl(item);
+    if (item.mediaType === 'video') {
+      const iframe = createVideoEmbed(item.url);
+      if (iframe) {
+        media.appendChild(iframe);
+      } else {
+        const videoFallback = document.createElement('div');
+        videoFallback.className = 'video-placeholder';
+        videoFallback.innerHTML = '<div class="placeholder-icon">🎬</div><p>Video entry</p>';
 
-    if (item.mediaType === 'video' && previewUrl) {
-      const image = document.createElement('img');
-      image.src = previewUrl;
-      image.alt = item.title;
-      image.addEventListener('click', () => openModal(item));
-      media.appendChild(image);
-    } else if (item.mediaType === 'video') {
-      const videoLabel = document.createElement('div');
-      videoLabel.className = 'video-placeholder';
-      videoLabel.innerHTML = '<div class="placeholder-icon">🎬</div><p>Video entry</p>';
+        const videoLink = document.createElement('a');
+        videoLink.href = item.url;
+        videoLink.textContent = 'Watch video';
+        videoLink.target = '_blank';
+        videoLink.rel = 'noopener noreferrer';
+        videoLink.className = 'video-link';
 
-      const videoLink = document.createElement('a');
-      videoLink.href = item.url;
-      videoLink.textContent = 'Watch video';
-      videoLink.target = '_blank';
-      videoLink.rel = 'noopener noreferrer';
-      videoLink.className = 'video-link';
-
-      media.appendChild(videoLabel);
-      media.appendChild(videoLink);
+        media.appendChild(videoFallback);
+        media.appendChild(videoLink);
+      }
     } else {
       const image = document.createElement('img');
       image.src = item.url;
@@ -133,35 +130,24 @@ function renderGallery(items) {
 function openModal(item) {
   modalMedia.innerHTML = '';
 
-  const previewUrl = getPreviewUrl(item);
+  if (item.mediaType === 'video') {
+    const iframe = createVideoEmbed(item.url, true);
+    if (iframe) {
+      modalMedia.appendChild(iframe);
+    } else {
+      const videoMessage = document.createElement('p');
+      videoMessage.textContent = 'This APOD entry is a video.';
 
-  if (item.mediaType === 'video' && previewUrl) {
-    const image = document.createElement('img');
-    image.src = previewUrl;
-    image.alt = item.title;
-    modalMedia.appendChild(image);
+      const videoLink = document.createElement('a');
+      videoLink.href = item.url;
+      videoLink.textContent = 'Open video in a new tab';
+      videoLink.target = '_blank';
+      videoLink.rel = 'noopener noreferrer';
+      videoLink.className = 'video-link';
 
-    const videoLink = document.createElement('a');
-    videoLink.href = item.url;
-    videoLink.textContent = 'Open video in a new tab';
-    videoLink.target = '_blank';
-    videoLink.rel = 'noopener noreferrer';
-    videoLink.className = 'video-link';
-
-    modalMedia.appendChild(videoLink);
-  } else if (item.mediaType === 'video') {
-    const videoMessage = document.createElement('p');
-    videoMessage.textContent = 'This APOD entry is a video.';
-
-    const videoLink = document.createElement('a');
-    videoLink.href = item.url;
-    videoLink.textContent = 'Open video in a new tab';
-    videoLink.target = '_blank';
-    videoLink.rel = 'noopener noreferrer';
-    videoLink.className = 'video-link';
-
-    modalMedia.appendChild(videoMessage);
-    modalMedia.appendChild(videoLink);
+      modalMedia.appendChild(videoMessage);
+      modalMedia.appendChild(videoLink);
+    }
   } else {
     const image = document.createElement('img');
     image.src = item.url;
@@ -189,6 +175,38 @@ modal.addEventListener('click', (event) => {
   }
 });
 
+function createVideoEmbed(url, isLarge = false) {
+  const youTubeId = extractYouTubeVideoId(url);
+  if (youTubeId) {
+    const iframe = document.createElement('iframe');
+    iframe.width = '100%';
+    iframe.height = isLarge ? '500' : '200';
+    iframe.src = `https://www.youtube.com/embed/${youTubeId}`;
+    iframe.title = 'YouTube video player';
+    iframe.frameBorder = '0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    iframe.allowFullscreen = true;
+    iframe.className = 'video-embed';
+    return iframe;
+  }
+
+  const vimeoId = extractVimeoVideoId(url);
+  if (vimeoId) {
+    const iframe = document.createElement('iframe');
+    iframe.width = '100%';
+    iframe.height = isLarge ? '500' : '200';
+    iframe.src = `https://player.vimeo.com/video/${vimeoId}`;
+    iframe.title = 'Vimeo video player';
+    iframe.frameBorder = '0';
+    iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.className = 'video-embed';
+    return iframe;
+  }
+
+  return null;
+}
+
 function getPreviewUrl(item) {
   if (item.mediaType === 'video') {
     if (item.thumbnailUrl) {
@@ -199,6 +217,12 @@ function getPreviewUrl(item) {
     if (videoId) {
       return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
+
+    // No thumbnail available from NASA and it's not a recognizable YouTube
+    // link (e.g. Vimeo or another host) — return nothing so the caller
+    // falls back to the video-placeholder UI instead of feeding a video
+    // page URL into an <img src>.
+    return '';
   }
 
   return item.url;
@@ -207,6 +231,13 @@ function getPreviewUrl(item) {
 function extractYouTubeVideoId(url) {
   const cleanUrl = url || '';
   const match = cleanUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+
+  return match ? match[1] : '';
+}
+
+function extractVimeoVideoId(url) {
+  const cleanUrl = url || '';
+  const match = cleanUrl.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/);
 
   return match ? match[1] : '';
 }
